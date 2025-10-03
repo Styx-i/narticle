@@ -24,6 +24,8 @@ public User getCurrentUser(HttpSession session) {
     User result = new User();
     result.setName(user.getName());
     result.setEmail(user.getEmail());
+    result.setLastLogin(user.getLastLogin());
+    result.setPreviousLogin(user.getPreviousLogin());
     return result;
 }
 }

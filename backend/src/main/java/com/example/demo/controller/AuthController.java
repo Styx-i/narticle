@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpSession;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,12 +24,25 @@ public class AuthController {
     private EmailService emailService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        if (userService.findByEmail(user.getEmail()) != null) {
+    public ResponseEntity<?> register(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        String password = payload.get("password");
+        String username = payload.get("username");
+
+        if (email == null || password == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Email and password are required"));
+        }
+
+        if (userService.findByEmail(email) != null) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Email already exists"));
         }
+
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(password);
+        user.setName(username);
         user.setVerified(false);
         String token = UUID.randomUUID().toString();
         user.setVerificationToken(token);
@@ -75,6 +89,15 @@ public class AuthController {
         }
 
         session.setAttribute("userEmail", dbUser.getEmail());
+        // update login timestamps on the user entity
+        try {
+            dbUser.setPreviousLogin(dbUser.getLastLogin());
+            dbUser.setLastLogin(LocalDateTime.now());
+            userService.save(dbUser);
+        } catch (Exception e) {
+            // don't fail login if timestamp save fails
+            System.err.println("Failed to update login timestamps: " + e.getMessage());
+        }
         return ResponseEntity.ok(Map.of("message", "Login successful"));
     }
 

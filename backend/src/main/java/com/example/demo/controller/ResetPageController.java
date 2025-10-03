@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class ResetPageController {
     @GetMapping("/reset")
     public String resetPage() {
-        // Forward to reset.html in static folder
         return "forward:/reset.html";
     }
 }

@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
 
-@CrossOrigin(origins = "http://localhost:8081")  // Allow requests from your frontend origin
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:8081"})  // Allow requests from frontend and backend origins during dev
 @RestController
 @RequestMapping("/api/password")
 public class PasswordController {
@@ -26,7 +26,9 @@ public class PasswordController {
     @PostMapping("/forgot")
     public String forgotPassword(@RequestBody Map<String, String> payload) {
         String email = payload.get("email");
-        String recaptcha = payload.get("recaptcha");
+    // accept either 'recaptcha' (server-side) or 'captcha' (frontend uses this key)
+    String recaptcha = payload.get("recaptcha");
+    if (recaptcha == null) recaptcha = payload.get("captcha");
 
         // 1. Verify reCAPTCHA
         if (recaptcha == null || recaptcha.isEmpty()) {
@@ -61,9 +63,26 @@ public class PasswordController {
         dbUser.setResetToken(token);
         userService.save(dbUser);
 
-        emailService.sendResetEmail(dbUser.getEmail(), token);
+        try {
+            emailService.sendResetEmail(dbUser.getEmail(), token);
+            return "Verification email sent";
+        } catch (Exception e) {
+            // Return the error message so developer can debug SMTP issues
+            return "Failed to send email: " + e.getMessage();
+        }
+    }
 
-        return "Verification email sent";
+    // Test endpoint to send a test email and return any SMTP errors
+    @PostMapping("/test-email")
+    public String testEmail(@RequestBody Map<String, String> payload) {
+        String to = payload.get("to");
+        if (to == null || to.isEmpty()) return "Missing 'to' address";
+        try {
+            emailService.sendVerificationEmail(to, "http://example.com/verify-test");
+            return "Test email sent to " + to;
+        } catch (Exception e) {
+            return "Failed to send test email: " + e.getMessage();
+        }
     }
 
     @PostMapping("/reset")

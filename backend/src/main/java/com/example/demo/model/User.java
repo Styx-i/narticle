@@ -1,6 +1,8 @@
 package com.example.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 public class User {
@@ -14,7 +16,12 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @JsonAlias("username")
     private String name;
+
+    // Track last and previous login times (stored in server DB)
+    private LocalDateTime previousLogin;
+    private LocalDateTime lastLogin;
 
 
     private String resetToken;
@@ -37,6 +44,12 @@ public class User {
     public void setName(String name) { this.name = name; }
     public String getResetToken() { return resetToken; }
     public void setResetToken(String resetToken) { this.resetToken = resetToken; }
+
+    public LocalDateTime getPreviousLogin() { return previousLogin; }
+    public void setPreviousLogin(LocalDateTime previousLogin) { this.previousLogin = previousLogin; }
+
+    public LocalDateTime getLastLogin() { return lastLogin; }
+    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
 
     public boolean isVerified() { return verified; }
     public void setVerified(boolean verified) { this.verified = verified; }

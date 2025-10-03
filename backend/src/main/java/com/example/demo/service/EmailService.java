@@ -11,7 +11,7 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    @Value("${server.port:8080}")
+    @Value("${server.port:8081}")
     private String serverPort;
 
     public void sendResetEmail(String to, String token) {

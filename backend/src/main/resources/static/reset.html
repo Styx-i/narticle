@@ -36,9 +36,21 @@
                 })
             });
             const msg = await res.text();
-            document.getElementById('message').textContent = msg;
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = msg;
             if (msg === 'Password reset successful') {
-                setTimeout(() => window.location.href = '/login.html', 2000);
+                // show countdown then redirect to frontend login page (Next.js)
+                let delay = 3; // seconds
+                messageEl.textContent = msg + ' Redirecting to login in ' + delay + '...';
+                const interval = setInterval(() => {
+                    delay -= 1;
+                    if (delay <= 0) {
+                        clearInterval(interval);
+                        window.location.href = 'http://localhost:3000/pages/login';
+                    } else {
+                        messageEl.textContent = msg + ' Redirecting to login in ' + delay + '...';
+                    }
+                }, 1000);
             }
         };
     </script>
