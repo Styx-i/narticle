@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h2 class="text-2xl font-bold mb-6 text-center">Reset Password</h2>
+        <form id="resetForm">
+            <input type="password" name="newPassword" placeholder="New Password" class="w-full mb-4 p-2 border rounded" required>
+            <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded">Reset Password</button>
+        </form>
+        <div class="flex justify-between mt-4">
+            <a href="login.html" class="text-blue-500">Back to Login</a>
+        </div>
+        <div id="message" class="mt-4 text-center text-green-500"></div>
+    </div>
+    <script>
+        // Get token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        document.getElementById('resetForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const newPassword = this.newPassword.value;
+            const res = await fetch('/api/password/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    token: token,
+                    newPassword: newPassword
+                })
+            });
+            const msg = await res.text();
+            document.getElementById('message').textContent = msg;
+            if (msg === 'Password reset successful') {
+                setTimeout(() => window.location.href = '/login.html', 2000);
+            }
+        };
+    </script>
+</body>
+</html>

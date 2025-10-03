@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
+    <div class="font-bold text-xl">NewsAPP</div>
+    <div id="timestamp" class="absolute left-1/2 transform -translate-x-1/2 text-lg font-mono"></div>
+    <div class="relative inline-block text-left">
+            <button id="profileBtn" class="bg-blue-500 px-4 py-2 rounded flex items-center focus:outline-none">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span id="profileName">Profile</span>
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            <div id="profileDropdown" class="origin-top-right absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-50">
+                <div class="py-1">
+                    <span class="block px-4 py-2 text-gray-700" id="dropdownName">Name</span>
+                    <a href="login.html" id="logout" class="block px-4 py-2 text-red-600 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="flex h-screen">
+    <aside id="sidebar" class="w-64 bg-white p-6 border-r overflow-y-auto" style="max-height: calc(100vh - 0px);">
+            <h3 class="font-semibold mb-4">Articles</h3>
+            <ul id="articlesList" class="space-y-2">
+            </ul>
+        </aside>
+        <main class="flex-1 p-8">
+            <div id="articleContent" class="bg-white p-6 rounded shadow-md">
+                <h2 class="text-2xl font-bold mb-4">Select an article</h2>
+                <div id="articleBody"></div>
+            </div>
+        </main>
+    </div>
+    <script>
+
+        async function checkLogin() {
+            try {
+                const res = await fetch('/api/user/me');
+                if (!res.ok) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const user = await res.json();
+                if (!user || !user.name) {
+                    window.location.href = '/login.html';
+                }
+            } catch (e) {
+                window.location.href = '/login.html';
+            }
+        }
+        checkLogin();
+        function updateTimestamp() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            document.getElementById('timestamp').textContent = now.toLocaleString(undefined, options);
+        }
+        setInterval(updateTimestamp, 1000);
+        updateTimestamp();
+
+        const profileBtn = document.getElementById('profileBtn');
+        const profileDropdown = document.getElementById('profileDropdown');
+        profileBtn.onclick = function(e) {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('hidden');
+        };
+        document.addEventListener('click', function(e) {
+            if (!profileDropdown.classList.contains('hidden')) {
+                profileDropdown.classList.add('hidden');
+            }
+        });
+
+        
+
+        async function setProfileName() {
+            let userName = 'Profile';
+            try {
+                const res = await fetch('/api/user/me');
+                if (res.ok) {
+                    const user = await res.json();
+                    if (user && user.name) {
+                        userName = user.name;
+                    }
+                }
+            } catch (e) {
+            }
+            document.getElementById('profileName').textContent = userName;
+            document.getElementById('dropdownName').textContent = userName;
+        }
+        setProfileName();
+
+        async function loadArticles() {
+            document.getElementById('articleContent').innerHTML = `
+                <h2 class="text-2xl font-bold mb-4">Select an article</h2>
+                <div id="articleBody"></div>
+            `;
+            const endpoint = '/api/news';
+            const res = await fetch(endpoint);
+            const data = await res.json();
+            let articles = data.articles || [];
+            articles = articles.filter(article => article.content && article.content.trim() !== '');
+
+            const list = document.getElementById('articlesList');
+            list.innerHTML = '';
+            articles.forEach((article, idx) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="#" class="text-blue-600" data-id="${idx}">NEWS ${idx + 1}</a>`;
+                li.querySelector('a').onclick = () => loadArticle(article);
+                list.appendChild(li);
+            });
+            const sidebar = document.getElementById('sidebar');
+            const baseHeight = 64;
+            const itemHeight = 40;
+            const totalHeight = baseHeight + articles.length * itemHeight;
+            const maxHeight = window.innerHeight;
+            sidebar.style.maxHeight = Math.min(totalHeight, maxHeight) + 'px';
+            if (articles.length > 0) {
+                loadArticle(articles[0]);
+            }
+        }
+        async function loadArticle(article) {
+            document.getElementById('articleContent').innerHTML = `
+                <h2 class="text-2xl font-bold mb-4">${article.title}</h2>
+                <div id="articleBody">
+                    <p><strong>Category:</strong> ${article.category || 'General'}</p>
+                    <p><strong>Author:</strong> ${article.author || 'Unknown'}</p>
+                    <p><strong>Source:</strong> ${article.source && article.source.name ? article.source.name : 'Unknown'}</p>
+                    <p><strong>Description & Content:</strong> ${(article.description || '') + '<br><br>' + (article.content || '')}</p>
+                    ${article.publishedAt ? `<p><strong>Published At:</strong> ${article.publishedAt}</p>` : ''}
+                    ${article.urlToImage ? `<img src='${article.urlToImage}' alt='News Image' class='my-4 rounded' style='max-width:100%;'/>` : ''}
+                    <p><strong>URL:</strong> <a href='${article.url}' target='_blank' class='text-blue-500'>${article.url}</a></p>
+                </div>
+            `;
+        }
+        window.onload = () => loadArticles();
+    </script>
+</body>
+</html>
